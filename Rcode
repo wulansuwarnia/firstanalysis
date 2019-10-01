@@ -1,0 +1,102 @@
+---
+title: "Geotag Wisma Gudang Beras"
+author: "Wulan Suwarnia"
+date: "June 28, 2019"
+output: 
+ html_document :
+    theme: journal
+    highlight: default
+    code_folding: hide
+    df_print: paged
+  
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+```
+
+#Latar Belakang Analisis 
+Penentuan lokasi yang tepat untuk penempatan base gudang di cluster-cluster area yang ada.Cluster yang dihasilkan diperoleh dari hasil pemetaan Geotag Wisma dan mempertimbangkan jarak antar wisma tersebut.
+
+#Pengambilan Data
+Data yang digunakan ialah data geotag dari tim IT digabung dengan data Wisma yang ada untuk pemetaan Cluster.
+
+```{r results='unhide', message=FALSE, warning=FALSE}
+#Install the lIbrary/package
+library(magrittr) # need to run every time you start R and want to use %>%
+library(dplyr)    # alternative, this also loads %>%
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+
+#Read the data
+library(readxl)
+geotag <- read_excel("data_input/geotag.xlsx")
+
+#Cleansing the data
+geotag$long <- as.numeric(geotag$Longitude)
+geotag$lat <- as.numeric(geotag$Lattitude)
+geotag
+```
+
+#Visualisasi Pemetaan Cluster
+```{r results='unhide', message=FALSE, warning=FALSE}
+#create new icon
+houseIcon <- makeIcon(
+  iconUrl = "https://www.rawshorts.com/freeicons/wp-content/uploads/2017/01/orange_repicthousebase_1484336388.png",
+  iconWidth = 25, iconHeight = 25,
+  iconAnchorX = 12, iconAnchorY = 33
+)
+
+# Visualisation : Show the 'geotag' dataset
+  leaflet(data = geotag[,],(height = "500px"),width = "910px") %>% addTiles() %>%
+  addMarkers(~long, ~lat, 
+             popup = ~as.character(NamaMMS), 
+             label = ~as.character(NamaMMS), 
+             icon=houseIcon,
+             group = geotag,
+             clusterOptions = markerClusterOptions(),
+             clusterId = "quakesCluster",
+             labelOptions = labelOptions(noHide = F,direction = 'auto')
+) %>%
+ 
+  addMeasure(
+    position = "bottomleft",
+    primaryLengthUnit = "kilometers",
+    primaryAreaUnit = "sqmeters",
+    activeColor = "#3D535D",
+    completedColor = "#7D4479"
+)%>%
+  addEasyButton(easyButton(
+    states = list(
+      easyButtonState(
+        stateName="unfrozen-markers",
+        icon="ion-toggle",
+        title="Freeze Clusters",
+        onClick = JS("
+          function(btn, map) {
+            var clusterManager =
+              map.layerManager.getLayer('cluster', 'quakesCluster');
+            clusterManager.freezeAtZoom();
+            btn.state('frozen-markers');
+          }")
+      ),
+      easyButtonState(
+        stateName="frozen-markers",
+        icon="ion-toggle-filled",
+        title="UnFreeze Clusters",
+        onClick = JS("
+          function(btn, map) {
+            var clusterManager =
+              map.layerManager.getLayer('cluster', 'quakesCluster');
+            clusterManager.unfreeze();
+            btn.state('unfrozen-markers');
+          }")
+))))
+  
+  
+```
+
+
+
